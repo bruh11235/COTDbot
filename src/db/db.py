@@ -1,7 +1,7 @@
+import sys
 import atexit
 import sqlite3
 from pathlib import Path
-
 
 DB_PATH = Path(__file__).parent / "db.db"
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
@@ -18,21 +18,14 @@ def _connect():
     atexit.register(conn.commit)
 
 
-def get_cf_handle(discord: str) -> str | None:
+def get_account_info(discord: str) -> tuple | None:
     try:
-        cursor.execute(
-            "SELECT codeforces FROM cfmap WHERE discord = ?",
-            (discord,),
-        )
-        row = cursor.fetchone()
-
-        if row is None:
-            return None
-        else:
-            return row[0]
-
+        cursor.execute(" SELECT * FROM cfmap WHERE discord = ?",
+                       (discord,),
+                       )
+        return cursor.fetchone()
     except Exception as e:
-        print(f"SQLite query failed: {e}")
+        print(f"SQLite query failed: {e}", file=sys.stderr)
         return None
 
 
@@ -45,26 +38,45 @@ def update_mapping(discord: str, codeforces: str):
                 ON CONFLICT(discord) DO UPDATE 
                 SET codeforces = excluded.codeforces
                 """,
-                (discord, codeforces),
+            (discord, codeforces),
             )
         conn.commit()
-
     except Exception as e:
-        print(f"SQLite query failed: {e}")
+        print(f"SQLite query failed: {e}", file=sys.stderr)
 
 
-def delete_mapping(discord: str):
+def reset_db_field(field: str):
+    try:
+        cursor.execute(f"UPDATE cfmap SET {field} = 0")
+        conn.commit()
+    except Exception as e:
+        print(f"SQLite query failed: {e}", file=sys.stderr)
+
+
+def set_problem(contest_id: str, idx: str):
     try:
         cursor.execute(
             """
-            DELETE FROM cfmap WHERE discord = ?
+            INSERT INTO problem(pk, contestID, idx)
+            VALUES (?, ?, ?)
+            ON CONFLICT(pk) DO UPDATE
+            SET codeforces = excluded.codeforces,
+                idx = excluded.idx
             """,
-            (discord,),
+            (1, contest_id, idx),
         )
         conn.commit()
-
     except Exception as e:
-        print(f"SQLite query failed: {e}")
+        print(f"SQLite query failed: {e}", file=sys.stderr)
+
+
+def get_problem() -> tuple | None:
+    try:
+        cursor.execute("SELECT * FROM problem WHERE pk = 1")
+        return cursor.fetchone()[1:]
+    except Exception as e:
+        print(f"SQLite query failed: {e}", file=sys.stderr)
+        return None
 
 
 def init_database():
@@ -82,3 +94,5 @@ _connect()
 
 if __name__ == "__main__":
     init_database()
+    cursor.execute('INSERT INTO problem VALUES (1, "N/A", "N/A")')
+    conn.commit()
