@@ -1,7 +1,7 @@
+import sys
 import atexit
 import sqlite3
 from pathlib import Path
-
 
 DB_PATH = Path(__file__).parent / "db.db"
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
@@ -18,53 +18,62 @@ def _connect():
     atexit.register(conn.commit)
 
 
-def get_cf_handle(discord: str) -> str | None:
-    try:
-        cursor.execute(
-            "SELECT codeforces FROM cfmap WHERE discord = ?",
-            (discord,),
-        )
-        row = cursor.fetchone()
-
-        if row is None:
-            return None
-        else:
-            return row[0]
-
-    except Exception as e:
-        print(f"SQLite query failed: {e}")
-        return None
+def get_account_info(discord: str) -> tuple | None:
+    cursor.execute(" SELECT * FROM cfmap WHERE discord = ?",
+                   (discord,),
+                   )
+    return cursor.fetchone()
 
 
 def update_mapping(discord: str, codeforces: str):
-    try:
-        cursor.execute(
-            """
-                INSERT INTO cfmap(discord, codeforces)
-                VALUES (?, ?)
-                ON CONFLICT(discord) DO UPDATE 
-                SET codeforces = excluded.codeforces
-                """,
-                (discord, codeforces),
-            )
-        conn.commit()
-
-    except Exception as e:
-        print(f"SQLite query failed: {e}")
-
-
-def delete_mapping(discord: str):
-    try:
-        cursor.execute(
-            """
-            DELETE FROM cfmap WHERE discord = ?
+    cursor.execute(
+        """
+            INSERT INTO cfmap(discord, codeforces)
+            VALUES (?, ?)
+            ON CONFLICT(discord) DO UPDATE 
+            SET codeforces = excluded.codeforces
             """,
-            (discord,),
+        (discord, codeforces),
         )
-        conn.commit()
+    conn.commit()
 
-    except Exception as e:
-        print(f"SQLite query failed: {e}")
+
+def reset_db_field(field: str):
+    cursor.execute(f"UPDATE cfmap SET {field} = 0")
+    conn.commit()
+
+
+def set_problem(contest_id: str, idx: str):
+    cursor.execute(
+        """
+        INSERT INTO problem(pk, contestID, idx)
+        VALUES (?, ?, ?)
+        ON CONFLICT(pk) DO UPDATE
+        SET codeforces = excluded.codeforces,
+            idx = excluded.idx
+        """,
+        (1, contest_id, idx),
+    )
+    conn.commit()
+
+
+def get_problem() -> tuple | None:
+    cursor.execute("SELECT * FROM problem WHERE pk = 1")
+    return cursor.fetchone()[1:]
+
+
+def increment_score(discord: str):
+    cursor.execute(
+        """
+        UPDATE cfmap
+        SET done_daily = 1,
+            points = points + 1,
+            mpoints = mpoints + 1,
+        WHERE discord = ?
+        """,
+        (discord),
+    )
+    conn.commit()
 
 
 def init_database():
@@ -82,3 +91,5 @@ _connect()
 
 if __name__ == "__main__":
     init_database()
+    cursor.execute('INSERT INTO problem VALUES (1, "N/A", "N/A")')
+    conn.commit()
