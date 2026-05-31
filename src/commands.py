@@ -98,16 +98,7 @@ async def _daily_update():
     set_problem(str(random_problem["contestId"]), random_problem["index"])
 
 
-async def _get_cotd(interaction: discord.Interaction):
-    contest_id, index = get_problem()
-    embed = discord.Embed(
-        title="Codeforces of the Day",
-        description=f"Link to today's problem: "
-                    f"https://codeforces.com/contest/{contest_id}/problem/{index}",
-    )
-    embed.add_field(name="Contest ID", value=contest_id, inline=True)
-    embed.add_field(name="Index", value=index, inline=True)
-
+def _add_next_day_field(embed: discord.Embed):
     now = datetime.datetime.now(NYC_TZ)
     tomorrow = now.date() + datetime.timedelta(days=1)
     next_midnight = datetime.datetime.combine(
@@ -119,7 +110,67 @@ async def _get_cotd(interaction: discord.Interaction):
                     value=f"<t:{int(next_midnight.timestamp())}:F>",
                     inline=True)
 
+
+async def _get_cotd(interaction: discord.Interaction):
+    contest_id, index = get_problem()
+    embed = discord.Embed(
+        title="Codeforces of the Day",
+        description=f"Link to today's problem: "
+                    f"https://codeforces.com/contest/{contest_id}/problem/{index}",
+    )
+    embed.add_field(name="Contest ID", value=contest_id, inline=True)
+    embed.add_field(name="Index", value=index, inline=True)
+    _add_next_day_field(embed)
+
     await interaction.response.send_message(embed=embed)
+
+
+async def _submit_cotd(interaction: discord.Interaction):
+    account = get_account_info(str(interaction.user.id))
+
+    if account is None:
+        embed = discord.Embed(
+            title="Codeforces account not found",
+            description="Please link your Codeforces account using the "
+                        "command `/identify`.",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=embed)
+        return
+
+    if account[3] == 1:
+        embed = discord.Embed(
+            title="COTD already completed",
+            description="Please wait for the next Codeforces of the Day.",
+            color=discord.Color.red()
+        )
+        _add_next_day_field(embed)
+        await interaction.response.send_message(embed=embed)
+        return
+
+    submissions = get_user_submission(account[1])
+    try:
+        last_submission = submissions["result"][0]["problem"]
+        contest_id, idx = get_problem()
+
+        assert last_submission["contestId"] == contest_id
+        assert last_submission["index"] == idx
+
+        increment_score(str(interaction.user.id))
+        embed = discord.Embed(
+            title="Submission recieved",
+            description=f"Congratulations!",
+            color=discord.Color.green()
+        )
+        await interaction.response.send_message(embed=embed)
+    except:
+        embed = discord.Embed(
+            title="Submission not recieved",
+            description=f"Please have to correct submission "
+                        f"be your lastest submission.",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=embed)
 
 
 def setup_commands(bot: commands.Bot):
@@ -141,3 +192,7 @@ def setup_commands(bot: commands.Bot):
     @bot.tree.command(name="get_cotd", description="Get the Codeforces of the Day")
     async def get_cotd(interaction: discord.Interaction):
         await _get_cotd(interaction)
+
+    @bot.tree.command(name="submit_cotd", description="Submit to the Codeforces of the Day")
+    async def submit_cotd(interaction: discord.Interaction):
+        await _submit_cotd(interaction)
