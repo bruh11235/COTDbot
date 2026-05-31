@@ -153,7 +153,7 @@ async def _submit_cotd(interaction: discord.Interaction):
         last_submission = submissions["result"][0]["problem"]
         contest_id, idx = get_problem()
 
-        assert last_submission["contestId"] == contest_id
+        assert str(last_submission["contestId"]) == contest_id
         assert last_submission["index"] == idx
 
         increment_score(str(interaction.user.id))
@@ -171,6 +171,25 @@ async def _submit_cotd(interaction: discord.Interaction):
             color=discord.Color.red()
         )
         await interaction.response.send_message(embed=embed)
+
+
+async def _admin_time_travel(interaction: discord.Interaction):
+    account = get_account_info(str(interaction.user.id))
+    if account is None or account[2] == 0:
+        embed = discord.Embed(
+            title="Permission Denied",
+            description=f"User is not admin.",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=embed)
+        return
+
+    await _daily_update()
+    embed = discord.Embed(
+        title="Welcome to the future",
+        description=f"Daily problem updated!"
+    )
+    await interaction.response.send_message(embed=embed)
 
 
 def setup_commands(bot: commands.Bot):
@@ -196,3 +215,7 @@ def setup_commands(bot: commands.Bot):
     @bot.tree.command(name="submit_cotd", description="Submit to the Codeforces of the Day")
     async def submit_cotd(interaction: discord.Interaction):
         await _submit_cotd(interaction)
+
+    @bot.tree.command(name="admin_time_travel", description="Admin only command")
+    async def admin_time_travel(interaction: discord.Interaction):
+        await _admin_time_travel(interaction)

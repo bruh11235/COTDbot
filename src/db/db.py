@@ -49,7 +49,7 @@ def set_problem(contest_id: str, idx: str):
         INSERT INTO problem(pk, contestID, idx)
         VALUES (?, ?, ?)
         ON CONFLICT(pk) DO UPDATE
-        SET codeforces = excluded.codeforces,
+        SET contestID = excluded.contestID,
             idx = excluded.idx
         """,
         (1, contest_id, idx),
@@ -68,10 +68,10 @@ def increment_score(discord: str):
         UPDATE cfmap
         SET done_daily = 1,
             points = points + 1,
-            mpoints = mpoints + 1,
+            mpoints = mpoints + 1
         WHERE discord = ?
         """,
-        (discord),
+        (discord,),
     )
     conn.commit()
 
