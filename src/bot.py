@@ -7,11 +7,8 @@ from commands import setup_commands
 
 
 load_dotenv()
-
 TOKEN = os.getenv("DISCORD_TOKEN")
-
 intents = discord.Intents.default()
-
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 
@@ -23,5 +20,4 @@ async def on_ready():
 
 
 setup_commands(bot)
-
 bot.run(TOKEN)
