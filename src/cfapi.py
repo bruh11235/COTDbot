@@ -11,7 +11,7 @@ def get_random_problem(min_rating: int = 800,
     data = response.json()
 
     if data["status"] != "OK":
-        raise RuntimeError("Codeforces API error")
+        return None
 
     problems = data["result"]["problems"]
     problems = [p for p in problems if "rating" in p and
@@ -25,7 +25,7 @@ def get_random_problem(min_rating: int = 800,
 def problem_url(problem: dict) -> str:
     contest_id = problem["contestId"]
     index = problem["index"]
-    return f"https://codeforces.com/problemset/problem/{contest_id}/{index}"
+    return f"https://codeforces.com/contest/{contest_id}/problem/{index}"
 
 
 def get_user_submission(username: str) -> dict | None:
@@ -34,7 +34,7 @@ def get_user_submission(username: str) -> dict | None:
     data = response.json()
 
     if data["status"] != "OK":
-        raise RuntimeError("Codeforces API error")
+        return None
 
     return data
 
