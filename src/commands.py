@@ -196,11 +196,12 @@ async def _leaderboard(interaction: discord.Interaction, monthly: bool):
         title=["", "Monthly "][monthly] + "Leaderboard (Shows top 25)",
     )
     lb = get_top_users(monthly=monthly)
-    for user_id, score in lb:
+    lines = []
+    for i, (user_id, score) in enumerate(lb, start=1):
         user = await interaction.client.fetch_user(int(user_id))
-        embed.add_field(name=user.name,
-                        value=f"{score} :coin:",
-                        inline=False)
+        lines.append(f"**#{i} {user.name}:** {score} :coin:")
+
+    embed.description = "\n".join(lines)
     await interaction.response.send_message(embed=embed)
 
 
