@@ -12,3 +12,9 @@ CREATE TABLE IF NOT EXISTS problem (
     contestID TEXT,
     idx TEXT
 );
+
+CREATE INDEX IF NOT EXISTS pt_idx
+ON cfmap(points);
+
+CREATE INDEX IF NOT EXISTS mpt_idx
+ON cfmap(mpoints);

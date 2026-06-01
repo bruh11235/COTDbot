@@ -9,7 +9,6 @@ from discord.ext import commands, tasks
 from cfapi import *
 from db.db import *
 
-
 NYC_TZ = ZoneInfo("America/New_York")
 
 
@@ -90,7 +89,7 @@ async def _get_handle(interaction: discord.Interaction, user: discord.User):
 
 async def _daily_update():
     now = datetime.datetime.now(NYC_TZ)
-    if now.day != 1:
+    if now.day == 1:
         reset_db_field("mpoints")
     reset_db_field("done_daily")
 
@@ -192,6 +191,19 @@ async def _admin_time_travel(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 
+async def _leaderboard(interaction: discord.Interaction, monthly: bool):
+    embed = discord.Embed(
+        title=["", "Monthly "][monthly] + "Leaderboard (Shows top 25)",
+    )
+    lb = get_top_users(monthly=monthly)
+    for user_id, score in lb:
+        user = await interaction.client.fetch_user(int(user_id))
+        embed.add_field(name=user.name,
+                        value=f"{score} :coin:",
+                        inline=False)
+    await interaction.response.send_message(embed=embed)
+
+
 def setup_commands(bot: commands.Bot):
     @bot.tree.command(name="identify", description="Identify Codeforces handle")
     @app_commands.describe(codeforces="Codeforces handle")
@@ -208,14 +220,23 @@ def setup_commands(bot: commands.Bot):
     async def daily_update():
         await _daily_update()
 
-    @bot.tree.command(name="get_cotd", description="Get the Codeforces of the Day")
+    @bot.tree.command(name="get_cotd",
+                      description="Get the Codeforces of the Day")
     async def get_cotd(interaction: discord.Interaction):
         await _get_cotd(interaction)
 
-    @bot.tree.command(name="submit_cotd", description="Submit to the Codeforces of the Day")
+    @bot.tree.command(name="submit_cotd",
+                      description="Submit to the Codeforces of the Day")
     async def submit_cotd(interaction: discord.Interaction):
         await _submit_cotd(interaction)
 
-    @bot.tree.command(name="admin_time_travel", description="Admin only command")
+    @bot.tree.command(name="admin_time_travel",
+                      description="Admin only command")
     async def admin_time_travel(interaction: discord.Interaction):
         await _admin_time_travel(interaction)
+
+    @bot.tree.command(name="leaderboard", description="Get leaderboard")
+    @app_commands.describe(monthly="Monthly leaderboard")
+    async def leaderboard(interaction: discord.Interaction,
+                          monthly: bool = False):
+        await _leaderboard(interaction, monthly)
