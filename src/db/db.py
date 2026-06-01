@@ -1,4 +1,3 @@
-import sys
 import atexit
 import sqlite3
 from pathlib import Path
@@ -76,6 +75,18 @@ def increment_score(discord: str):
     conn.commit()
 
 
+def get_top_users(limit: int = 25, monthly: bool = False) -> list:
+    pts = "mpoints" if monthly else "points"
+    cursor.execute(
+        f"""
+        SELECT discord, {pts}
+        FROM cfmap
+        ORDER BY {pts} DESC
+        LIMIT {limit}
+        """)
+    return cursor.fetchall()
+
+
 def init_database():
     if DB_PATH.exists():
         open(DB_PATH, "w").close()
@@ -91,5 +102,5 @@ _connect()
 
 if __name__ == "__main__":
     init_database()
-    cursor.execute('INSERT INTO problem VALUES (1, "N/A", "N/A")')
+    cursor.execute("INSERT INTO problem(pk, contestID, idx) VALUES (1, 'N/A', 'N/A')")
     conn.commit()
