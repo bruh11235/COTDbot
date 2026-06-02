@@ -195,7 +195,7 @@ async def _leaderboard(interaction: discord.Interaction, monthly: bool):
     await interaction.response.send_message(embed=embed)
 
 
-@tasks.loop(time=datetime.time(hour=1, minute=15, tzinfo=NYC_TZ))
+@tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=NYC_TZ))
 async def daily_update():
     now = datetime.datetime.now(NYC_TZ)
     if now.day == 1:
