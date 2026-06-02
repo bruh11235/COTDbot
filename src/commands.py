@@ -87,16 +87,6 @@ async def _get_handle(interaction: discord.Interaction, user: discord.User):
         await interaction.response.send_message(embed=embed)
 
 
-async def _daily_update():
-    now = datetime.datetime.now(NYC_TZ)
-    if now.day == 1:
-        reset_db_field("mpoints")
-    reset_db_field("done_daily")
-
-    random_problem = get_random_problem()
-    set_problem(str(random_problem["contestId"]), random_problem["index"])
-
-
 def _add_next_day_field(embed: discord.Embed):
     now = datetime.datetime.now(NYC_TZ)
     tomorrow = now.date() + datetime.timedelta(days=1)
@@ -183,7 +173,7 @@ async def _admin_time_travel(interaction: discord.Interaction):
         await interaction.response.send_message(embed=embed)
         return
 
-    await _daily_update()
+    await daily_update()
     embed = discord.Embed(
         title="Welcome to the future",
         description=f"Daily problem updated!"
@@ -205,6 +195,17 @@ async def _leaderboard(interaction: discord.Interaction, monthly: bool):
     await interaction.response.send_message(embed=embed)
 
 
+@tasks.loop(time=datetime.time(hour=1, minute=15, tzinfo=NYC_TZ))
+async def daily_update():
+    now = datetime.datetime.now(NYC_TZ)
+    if now.day == 1:
+        reset_db_field("mpoints")
+    reset_db_field("done_daily")
+
+    random_problem = get_random_problem()
+    set_problem(str(random_problem["contestId"]), random_problem["index"])
+
+
 def setup_commands(bot: commands.Bot):
     @bot.tree.command(name="identify", description="Identify Codeforces handle")
     @app_commands.describe(codeforces="Codeforces handle")
@@ -216,10 +217,6 @@ def setup_commands(bot: commands.Bot):
     @app_commands.describe(user="Discord User")
     async def get_handle(interaction: discord.Interaction, user: discord.User):
         await _get_handle(interaction, user)
-
-    @tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=NYC_TZ))
-    async def daily_update():
-        await _daily_update()
 
     @bot.tree.command(name="get_cotd",
                       description="Get the Codeforces of the Day")
