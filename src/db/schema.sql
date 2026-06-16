@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS cfmap (
 CREATE TABLE IF NOT EXISTS problem (
     pk INTEGER PRIMARY KEY,
     contestID TEXT,
-    idx TEXT
+    idx TEXT,
+    rating TEXT
 );
 
 CREATE INDEX IF NOT EXISTS pt_idx

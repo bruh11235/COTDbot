@@ -42,16 +42,17 @@ def reset_db_field(field: str):
     conn.commit()
 
 
-def set_problem(contest_id: str, idx: str):
+def set_problem(contest_id: str, idx: str, rating: str):
     cursor.execute(
         """
-        INSERT INTO problem(pk, contestID, idx)
-        VALUES (?, ?, ?)
+        INSERT INTO problem(pk, contestID, idx, rating)
+        VALUES (?, ?, ?, ?)
         ON CONFLICT(pk) DO UPDATE
         SET contestID = excluded.contestID,
-            idx = excluded.idx
+            idx = excluded.idx,
+            rating = excluded.rating
         """,
-        (1, contest_id, idx),
+        (1, contest_id, idx, rating),
     )
     conn.commit()
 
@@ -102,5 +103,6 @@ _connect()
 
 if __name__ == "__main__":
     init_database()
-    cursor.execute("INSERT INTO problem(pk, contestID, idx) VALUES (1, 'N/A', 'N/A')")
+    cursor.execute("INSERT INTO problem(pk, contestID, idx, rating) VALUES (1, 'N/A', 'N/A', 'N/A')")
+
     conn.commit()

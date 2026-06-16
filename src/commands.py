@@ -101,14 +101,15 @@ def _add_next_day_field(embed: discord.Embed):
 
 
 async def _get_cotd(interaction: discord.Interaction):
-    contest_id, index = get_problem()
+    contest_id, index, rating = get_problem()
     embed = discord.Embed(
         title="Codeforces of the Day",
         description=f"Link to today's problem: "
                     f"https://codeforces.com/contest/{contest_id}/problem/{index}",
     )
+
     embed.add_field(name="Contest ID", value=contest_id, inline=True)
-    embed.add_field(name="Index", value=index, inline=True)
+    embed.add_field(name="Rating", value=rating, inline=True)
     _add_next_day_field(embed)
 
     await interaction.response.send_message(embed=embed)
@@ -140,7 +141,7 @@ async def _submit_cotd(interaction: discord.Interaction):
     submissions = get_user_submission(account[1])
     try:
         last_submission = submissions["result"][0]["problem"]
-        contest_id, idx = get_problem()
+        contest_id, idx, rating = get_problem()
 
         assert str(last_submission["contestId"]) == contest_id
         assert last_submission["index"] == idx
@@ -203,7 +204,7 @@ async def daily_update():
     reset_db_field("done_daily")
 
     random_problem = get_random_problem()
-    set_problem(str(random_problem["contestId"]), random_problem["index"])
+    set_problem(str(random_problem["contestId"]), random_problem["index"], random_problem["rating"])
 
 
 def setup_commands(bot: commands.Bot):
